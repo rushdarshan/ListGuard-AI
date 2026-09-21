@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reviewer dashboard</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 60rem; margin: 2rem auto; padding: 0 1rem; }
+  .error { color: #a00; } table { border-collapse: collapse; } td, th { border: 1px solid #ccc; padding: .25rem .5rem; }
+</style>
+</head>
+<body>
+<main aria-labelledby="title">
+  <h1 id="title">Reviewer dashboard</h1>
+  <label>Listing ID <input id="listing-id" type="text" size="40" aria-describedby="status"></label>
+  <button id="load" type="button">Load</button>
+  <!-- ponytail: one live region covers loading + error + success announcements -->
+  <p id="status" role="status" aria-live="polite">Enter a listing ID and press Load.</p>
+  <p id="error" class="error" role="alert" hidden></p>
+  <section id="dashboard" hidden aria-label="Review details">
+    <h2 id="d-title"></h2>
+    <p id="d-desc"></p>
+    <h3>Images</h3><ul id="d-images"></ul>
+    <h3>Attributes</h3><table><thead><tr><th>Key</th><th>Value</th><th>Confidence</th><th>Evidence</th></tr></thead><tbody id="d-attrs"></tbody></table>
+    <h3>Duplicates</h3><ul id="d-dups"></ul>
+    <h3>Price interval</h3><p id="d-price"></p>
+    <h3>Risk findings</h3><ul id="d-risk"></ul>
+    <h3>Model versions</h3><ul id="d-models"></ul>
+    <h3>Decision history</h3><ol id="d-history"></ol>
+    <h3>Review</h3>
+    <form id="review-form">
+      <label>Reviewer <input id="r-reviewer" required type="text"></label>
+      <label>Correction (JSON, only for Correct) <input id="r-corrected" type="text" placeholder='{"brand":"canon"}'></label>
+      <button type="submit" data-decision="accepted">Accept</button>
+      <button type="submit" data-decision="rejected">Reject</button>
+      <button type="submit" data-decision="corrected">Correct</button>
+    </form>
+  </section>
+</main>
+<script type="module">
+  import { initialState, errorState, applyReviewDecision, escapeHtml } from "./dashboard.js";
+  const $ = (id) => document.getElementById(id);
+  const API = document.documentElement.dataset.api || "";
+  let state = initialState();
+  let decision = "accepted";
+  const setStatus = (m) => { $("status").textContent = m; };
+  const fail = (m) => { state = errorState(m); const e = $("error"); e.textContent = m; e.hidden = false; setStatus("Failed to load."); };
+  document.querySelectorAll("#review-form button").forEach((b) =>
+    b.addEventListener("click", () => { decision = b.dataset.decision; }));
+  $("load").addEventListener("click", async () => {
+    state = initialState(); $("error").hidden = true; setStatus("Loading review data…");
+    try {
+      const r = await fetch(`${API}/v1/listings/${$("listing-id").value}/review-dashboard`);
+      if (!r.ok) throw new Error(`dashboard returned ${r.status}`);
+      state = { status: "ready", payload: await r.json(), error: null };
+      render(); setStatus("Review data loaded.");
+    } catch (e) { fail(e instanceof Error ? e.message : String(e)); }
+  });
+  function render() {
+    const d = state.payload; if (!d) return;
+    $("dashboard").hidden = false;
+    $("d-title").textContent = d.listing.title;
+    $("d-desc").textContent = d.listing.description || "(no seller description)";
+    $("d-images").innerHTML = d.images.map((i) => `<li>${escapeHtml(i.filename)} (${i.width ?? "?"}×${i.height ?? "?"})</li>`).join("") || "<li>none</li>";
+    const attrs = d.predictions.flatMap((p) => p.attributes.map((a) => ({ ...a, model: p.model_version.version })));
+    $("d-attrs").innerHTML = attrs.map((a) =>
+      `<tr><td>${escapeHtml(a.key)}</td><td>${a.value == null ? "<em>abstained</em>" : escapeHtml(a.value)}</td><td>${a.confidence}</td><td>${a.evidence.map((e) => escapeHtml(e.source)).join(", ") || "—"}</td></tr>`).join("");
+    $("d-dups").innerHTML = d.duplicate_matches.map((m) => `<li>${escapeHtml(m.candidate_listing_id)} — ${m.score}</li>`).join("") || "<li>none</li>";
+    $("d-price").textContent = d.price_interval ? `${d.price_interval.low} – ${d.price_interval.high}` : "no price estimate";
+    $("d-risk").innerHTML = d.risk_findings.map((f) => `<li>[${escapeHtml(f.severity)}] ${escapeHtml(f.risk_category)}: ${escapeHtml(f.message)}</li>`).join("") || "<li>none</li>";
+    $("d-models").innerHTML = [...new Map(d.predictions.map((p) => [p.model_version.id, p.model_version])).values()].map((m) => `<li>${escapeHtml(m.name)} ${escapeHtml(m.version)}</li>`).join("") || "<li>none</li>";
+    renderHistory(d.decision_history);
+  }
+  function renderHistory(hist) {
+    $("d-history").innerHTML = hist.map((h) => `<li>${escapeHtml(h.decision)} by ${escapeHtml(h.reviewer_id)}${h.corrected_attributes ? ` — ${escapeHtml(JSON.stringify(h.corrected_attributes))}` : ""}</li>`).join("") || "<li>no reviews yet</li>";
+  }
+  $("review-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const body = { decision, reviewer_id: $("r-reviewer").value };
+    if (decision === "corrected") {
+      try { body.corrected_attributes = JSON.parse($("r-corrected").value || "null"); }
+      catch { fail("Correction must be valid JSON."); return; }
+      if (!body.corrected_attributes) { fail("Correct requires corrected_attributes."); return; }
+    }
+    const pid = state.payload.predictions[0]?.id;
+    if (pid) body.prediction_id = pid;
+    const r = await fetch(`${API}/v1/listings/${$("listing-id").value}/reviews`,
+      { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    if (!r.ok) { fail(`review returned ${r.status}`); return; }
+    const event = await r.json();
+    // append-only: original prediction object is never touched
+    state.payload.decision_history = applyReviewDecision(state.payload.decision_history, {
+      id: event.id, prediction_id: event.prediction_id, decision: event.decision,
+      corrected_attributes: event.corrected_attributes, note: event.note,
+      reviewer_id: event.reviewer_id, created_at: event.created_at,
+    });
+    renderHistory(state.payload.decision_history);
+    setStatus(`Recorded ${decision}.`);
+  });
+</script>
+</body>
+</html>

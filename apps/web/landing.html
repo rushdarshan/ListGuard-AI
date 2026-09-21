@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>ListGuard. Know every listing before you publish it.</title>
+<style>
+  :root {
+    --bg: #0c0e12;
+    --surface: #14171d;
+    --line: #262b34;
+    --text: #e8eaf0;
+    --muted: #9aa3b2;
+    --accent: #34d399;
+    --accent-ink: #06281c;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    line-height: 1.6;
+  }
+  .wrap { max-width: 72rem; margin: 0 auto; padding: 0 1.5rem; }
+  nav { border-bottom: 1px solid var(--line); }
+  nav .wrap {
+    display: flex; align-items: center; gap: 2rem;
+    height: 68px;
+  }
+  .brand { font-weight: 700; letter-spacing: -0.02em; text-decoration: none; color: var(--text); }
+  .brand span { color: var(--accent); }
+  nav .links { display: flex; gap: 1.5rem; margin-left: auto; }
+  nav a { color: var(--muted); text-decoration: none; font-size: 0.95rem; }
+  nav a:hover { color: var(--text); }
+  .btn {
+    display: inline-block;
+    background: var(--accent);
+    color: var(--accent-ink);
+    font-weight: 650;
+    padding: 0.7rem 1.4rem;
+    border-radius: var(--radius);
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .btn:hover { filter: brightness(1.08); }
+  .btn:active { transform: translateY(1px); }
+  .btn.ghost {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--line);
+  }
+  .eyebrow {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--accent);
+    margin: 0 0 1rem;
+  }
+  h1 {
+    font-size: 3rem;
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+    margin: 0 0 1.25rem;
+    max-width: 16ch;
+  }
+  h2 {
+    font-size: 1.9rem;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    margin: 0 0 0.75rem;
+    max-width: 24ch;
+  }
+  p.lede { color: var(--muted); max-width: 62ch; margin: 0 0 2rem; }
+  section { padding: 5rem 0; border-bottom: 1px solid var(--line); }
+  .hero-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.15fr;
+    gap: 3rem;
+    align-items: center;
+  }
+  .cta-row { display: flex; gap: 0.9rem; flex-wrap: wrap; }
+  figure.shot { margin: 0; }
+  figure.shot img {
+    width: 100%;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    display: block;
+  }
+  figure.shot figcaption { color: var(--muted); font-size: 0.9rem; margin-top: 0.75rem; }
+  .band img {
+    width: 100%;
+    height: 16rem;
+    object-fit: cover;
+    border-radius: var(--radius);
+    display: block;
+  }
+  .steps { display: grid; gap: 0; margin-top: 2.5rem; }
+  .step {
+    display: grid;
+    grid-template-columns: 4rem 1fr;
+    gap: 1.5rem;
+    padding: 1.5rem 0;
+    border-top: 1px solid var(--line);
+  }
+  .step:last-child { border-bottom: 1px solid var(--line); }
+  .step .n { font-size: 1.7rem; font-weight: 700; color: var(--accent); line-height: 1.2; }
+  .step h3 { margin: 0 0 0.3rem; font-size: 1.1rem; }
+  .step p { margin: 0; color: var(--muted); max-width: 62ch; }
+  .metrics {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-top: 2.5rem;
+  }
+  .metrics div { background: var(--surface); padding: 1.4rem 1.6rem; }
+  .metrics dt { font-weight: 700; }
+  .metrics dd { margin: 0.2rem 0 0; color: var(--muted); font-size: 0.95rem; }
+  .ticks { margin: 2rem 0 0; padding: 0; list-style: none; display: grid; gap: 0.9rem; }
+  .ticks li { padding-left: 1.8rem; position: relative; color: var(--muted); max-width: 62ch; }
+  .ticks li::before {
+    content: "";
+    position: absolute;
+    left: 0; top: 0.45em;
+    width: 0.7rem; height: 0.7rem;
+    border-radius: 2px;
+    background: var(--accent);
+  }
+  .ticks strong { color: var(--text); font-weight: 650; }
+  footer { padding: 3.5rem 0; }
+  footer .wrap { display: flex; align-items: baseline; gap: 2rem; flex-wrap: wrap; }
+  footer p { color: var(--muted); margin: 0; }
+  footer .btn { margin-left: auto; }
+  @media (max-width: 767px) {
+    .hero-grid { grid-template-columns: 1fr; }
+    .metrics { grid-template-columns: 1fr; }
+    h1 { font-size: 2.3rem; }
+    section { padding: 3.5rem 0; }
+    nav .links { display: none; }
+    footer .btn { margin-left: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none; animation: none; }
+  }
+</style>
+</head>
+<body>
+<nav aria-label="Primary">
+  <div class="wrap">
+    <a class="brand" href="./landing.html">ListGuard<span>.</span></a>
+    <div class="links">
+      <a href="#proof">Product</a>
+      <a href="#passes">Passes</a>
+      <a href="#measured">Evaluation</a>
+      <a href="#receipts">Review</a>
+    </div>
+    <a class="btn" href="./dashboard.html">Open the dashboard</a>
+  </div>
+</nav>
+
+<main>
+  <section aria-labelledby="hero-h">
+    <div class="wrap hero-grid">
+      <div>
+        <p class="eyebrow">Listing intelligence for marketplaces</p>
+        <h1 id="hero-h">Know every listing before you publish it.</h1>
+        <p class="lede">ListGuard reads photos and rough descriptions, then grounds each attribute in evidence you can audit.</p>
+        <div class="cta-row">
+          <a class="btn" href="./dashboard.html">Open the dashboard</a>
+          <a class="btn ghost" href="#passes">How review works</a>
+        </div>
+      </div>
+      <figure class="shot">
+        <img src="./shot-dashboard.png" alt="The ListGuard reviewer dashboard showing a listing with grounded attributes, evidence, and decision history" width="1440" height="900">
+        <figcaption>Live capture of the reviewer dashboard running against the local API.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section id="proof" aria-labelledby="proof-h">
+    <div class="wrap">
+      <h2 id="proof-h">The reviewer sees proof, not predictions.</h2>
+      <p class="lede">Each attribute arrives with a confidence score, the exact text or image region behind it, and the model version that produced it. Anything unsupported is marked abstained, never stated as fact.</p>
+      <div class="band">
+        <img src="https://picsum.photos/seed/listguard-parcels/1600/600" alt="Parcels on a packing bench waiting for listing review" width="1600" height="600" loading="lazy">
+      </div>
+    </div>
+  </section>
+
+  <section id="passes" aria-labelledby="passes-h">
+    <div class="wrap">
+      <h2 id="passes-h">From upload to decision in four passes.</h2>
+      <div class="steps">
+        <div class="step">
+          <div class="n" aria-hidden="true">1</div>
+          <div><h3>Upload</h3><p>Sellers drop in photos plus a rough description. No forms, no taxonomy homework.</p></div>
+        </div>
+        <div class="step">
+          <div class="n" aria-hidden="true">2</div>
+          <div><h3>Ground</h3><p>Brand, category, color, and condition are extracted with confidence, or the system abstains.</p></div>
+        </div>
+        <div class="step">
+          <div class="n" aria-hidden="true">3</div>
+          <div><h3>Compare</h3><p>Near-duplicate search plus a calibrated price interval, with the matches shown.</p></div>
+        </div>
+        <div class="step">
+          <div class="n" aria-hidden="true">4</div>
+          <div><h3>Decide</h3><p>Publish, warn, or send to human review. Corrections append as new events; predictions are never edited.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="measured" aria-labelledby="measured-h">
+    <div class="wrap">
+      <p class="eyebrow">Evaluation</p>
+      <h2 id="measured-h">Measured, never claimed.</h2>
+      <p class="lede">Retrieval is scored with standard ranking metrics. Confidence is calibrated. Latency is timed. When a number appears in this project, it was measured on a real run.</p>
+      <dl class="metrics">
+        <div><dt>Recall at K</dt><dd>Share of true duplicates found in the top results.</dd></div>
+        <div><dt>MRR and mAP</dt><dd>Rank-aware scoring across the full result list.</dd></div>
+        <div><dt>Calibration</dt><dd>Confidence checked against outcomes, not vibes.</dd></div>
+        <div><dt>Latency</dt><dd>Timed per call from p50 to p99, with query plans.</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <section id="receipts" aria-labelledby="receipts-h">
+    <div class="wrap">
+      <h2 id="receipts-h">Every decision keeps its receipts.</h2>
+      <ul class="ticks">
+        <li><strong>Evidence stays attached.</strong> Text spans, image regions, and sources travel with each attribute.</li>
+        <li><strong>Versions are pinned.</strong> Any result reproduces from its stored model version.</li>
+        <li><strong>History is append-only.</strong> Accepts, rejects, and corrections accumulate; nothing is overwritten.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section aria-labelledby="run-h">
+    <div class="wrap">
+      <h2 id="run-h">Run it locally.</h2>
+      <p class="lede">API plus dashboard plus Postgres in one compose file. Seed a listing, open the dashboard, correct a prediction.</p>
+      <div class="cta-row">
+        <a class="btn" href="./dashboard.html">Open the dashboard</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <a class="brand" href="./landing.html">ListGuard<span>.</span></a>
+    <p>Built for marketplaces that check before they publish.</p>
+  </div>
+</footer>
+</body>
+</html>
