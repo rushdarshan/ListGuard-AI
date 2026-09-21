@@ -1,0 +1,37 @@
+# Secrets / local env overrides (commit .env.example only)
+.env
+infra/.env
+
+# Local dev databases (sqlite fallbacks, smoke runs)
+*.db
+*.sqlite*
+*.sqlite-journal
+
+# Archives and one-off bundles
+codebase.zip
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage*
+htmlcov/
+*.egg-info/
+.venv/
+
+# Node (web dashboard tests)
+node_modules/
+
+# Agent / tooling state (session-local, never source)
+.opencode/
+.benchmarks/
+
+# E2E / debug artifacts
+apps/web/shot-dashboard.png
+apps/web/*-fail.png
+
+# OS
+.DS_Store
+Thumbs.db

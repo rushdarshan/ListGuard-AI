@@ -1,0 +1,26 @@
+[project]
+name = "listguard-api"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+  "fastapi>=0.115",
+  "uvicorn[standard]>=0.30",
+  "sqlalchemy>=2.0",
+  "alembic>=1.13",
+  "pydantic>=2.0",
+  "pydantic-settings>=2.0",
+  "psycopg[binary]>=3.1",
+  "redis>=5.0",
+  "httpx>=0.27",
+  "pgvector>=0.3",  # Phase 2: vector type on PostgreSQL only; SQLite tests don't need it
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8.0", "httpx>=0.27"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.alembic]
+script_location = "alembic"

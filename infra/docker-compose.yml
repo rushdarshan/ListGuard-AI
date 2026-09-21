@@ -1,0 +1,40 @@
+# DEV-ONLY compose. Production must override POSTGRES_* with generated secrets
+# (secret manager/env) and keep db/redis off published ports.
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-listguard}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-listguard}
+      POSTGRES_DB: ${POSTGRES_DB:-listguard}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    # No published ports: reach the db via `docker compose exec db psql ...`
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-listguard}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7
+    # No published ports: the api reaches redis over the service network.
+
+  api:
+    build: ../apps/api
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-listguard}:${POSTGRES_PASSWORD:-listguard}@db:5432/${POSTGRES_DB:-listguard}
+      REDIS_URL: redis://redis:6379/0
+    ports:
+      - "8000:8000"
+    # Reviewer item 2: migrate before serving so a fresh `compose up` creates tables.
+    command: sh -c "python -m alembic -c alembic.ini upgrade head && exec python -m uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+volumes:
+  pgdata:
